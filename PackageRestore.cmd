@@ -1,0 +1,1 @@
+".nuget\nuget" install "packages.config" -ExcludeVersion -OutputDirectory "packages"
