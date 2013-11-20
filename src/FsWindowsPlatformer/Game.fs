@@ -12,7 +12,9 @@ type FsWindowsPlatformerGame() as game =
     let graphics = new GraphicsDeviceManager(game)
     let mutable spritebatch = Unchecked.defaultof<_>
 
-    let mutable gamemap = GameMap.empty, Unchecked.defaultof<_>    
+    let mutable gamemap = GameMap.empty, Unchecked.defaultof<_>  
+    let mutable heroTexture = Unchecked.defaultof<_>
+    let mutable hero = Hero.spawn(new Vector2(float32 64, float32 64))
 
     do 
         game.Content.RootDirectory <- "Content"
@@ -28,6 +30,7 @@ type FsWindowsPlatformerGame() as game =
     override game.LoadContent() = 
         spritebatch <- new SpriteBatch(game.GraphicsDevice)
         gamemap <- GameMap.load game.Content "map.txt"
+        heroTexture <- Hero.loadTexture game.Content
 
     override game.Update(gametime) = 
         ()
@@ -36,4 +39,5 @@ type FsWindowsPlatformerGame() as game =
         game.GraphicsDevice.Clear(Color.CornflowerBlue)
 
         // tie-fighter!
-        snd gamemap |> GameMap.draw spritebatch <| fst gamemap
+        GameMap.draw spritebatch (snd gamemap) (fst gamemap) 
+        Hero.draw spritebatch heroTexture hero

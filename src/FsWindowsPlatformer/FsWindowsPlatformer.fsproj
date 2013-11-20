@@ -50,6 +50,7 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />
+    <Compile Include="Hero.fs" />
     <Compile Include="GameMap.fs" />
     <Compile Include="Game.fs" />
     <Compile Include="Program.fs" />
