@@ -14,7 +14,7 @@ type FsWindowsPlatformerGame() as game =
 
     let mutable gamemap = GameMap.empty, Unchecked.defaultof<_>  
     let mutable heroTexture = Unchecked.defaultof<_>
-    let mutable hero = Hero.spawn(new Vector2(float32 64, float32 64))
+    let mutable hero = Hero.spawn(new Vector2(float32 -100, float32 -100))
 
     do 
         game.Content.RootDirectory <- "Content"
@@ -30,6 +30,7 @@ type FsWindowsPlatformerGame() as game =
     override game.LoadContent() = 
         spritebatch <- new SpriteBatch(game.GraphicsDevice)
         gamemap <- GameMap.load game.Content "map.txt"
+        hero <- fst gamemap |> GameMap.getHeroSpawnPosition |> Hero.spawn
         heroTexture <- Hero.loadTexture game.Content
 
     override game.Update(gametime) = 

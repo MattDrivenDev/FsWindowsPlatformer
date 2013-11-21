@@ -7,10 +7,14 @@ open Microsoft.Xna.Framework.Content
 open Microsoft.Xna.Framework.Graphics
 
 type Tile = 
+    | HeroSpawn
+    | EnemySpawn
     | Empty
     | Full
 
 module GameMap =
+
+    let flatten (a: 'a[,]) = Seq.cast<'a> a
 
     let emptyMap = """
 00000000000000000000
@@ -44,6 +48,8 @@ module GameMap =
         match x with
         | "1" -> Full
         | "0" -> Empty
+        | "8" -> EnemySpawn
+        | "9" -> HeroSpawn
         | _ -> Empty   
 
     let parse =    
@@ -60,6 +66,21 @@ module GameMap =
         let map = parse maptext        
         map, texture
 
+    let getHeroSpawnPosition =
+        let coordsToPosition (x,y) = 
+            ((new Vector2(float32 x, float32 y)) * (new Vector2(float32 tileW, float32 tileH)))
+            + (new Vector2(float32 (Hero.frameW/2), float32 (Hero.frameH)))
+
+        let heroSpawn (x,y,tile) = 
+            match tile with
+            | HeroSpawn -> Some(x,y)
+            | EnemySpawn | Empty | Full -> None
+
+        Array2D.mapi (fun x y tile -> x,y,tile)
+        >> flatten
+        >> Seq.pick heroSpawn
+        >> coordsToPosition        
+
     let draw (spritebatch:SpriteBatch) (texture:Texture2D) tiles =
         let drawOne(position, source) =
             spritebatch.Draw(
@@ -73,7 +94,7 @@ module GameMap =
                 new Vector2(float32 x * float32 tileW, float32 y * float32 tileH)
             let source = 
                 match tile with
-                | Empty -> new Rectangle(0, 0, tileW, tileH)
+                | Empty | HeroSpawn | EnemySpawn -> new Rectangle(0, 0, tileW, tileH)
                 | Full -> new Rectangle(tileW, 0, tileW, tileH)            
             position, source            
               
