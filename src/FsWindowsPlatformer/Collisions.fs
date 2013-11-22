@@ -29,4 +29,3 @@ module Collisions =
                 Jumping = false
                 Speed = new Vector2(hero.Speed.X, float32 0) }
         else hero 
-            

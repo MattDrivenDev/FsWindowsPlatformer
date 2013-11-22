@@ -18,7 +18,7 @@ type HeroState = {
     Speed : Vector2
     CollisionRectangle : Rectangle
     CurrentFrame : int
-    CurrentFrametime : float32 }
+    CurrentFrametime : float }
 
 /// Module for working with the hero.
 module Hero = 
@@ -28,7 +28,7 @@ module Hero =
     let firstWalkFrame = 1
     let idleFrame = 0
     let jumpFrame = 10
-    let frameTime = float32 100
+    let frameTime = 100.0
     let acceleration = float32 0.5
     let inertia = float32 0.1
     let jumpSpeed = float32 8.0
@@ -54,8 +54,24 @@ module Hero =
             Direction = direction
             Speed = new Vector2(hero.Speed.X + diff, hero.Speed.Y) }
 
+    /// Updates the hero's current frame in the animation.
+    let updateAnimation (gametime:GameTime) hero = 
+        let updateMoveFrame hero cft = 
+            if cft >= frameTime then
+                let frame = if hero.CurrentFrame + 1 > walkFrames then firstWalkFrame else hero.CurrentFrame + 1
+                {hero with CurrentFrametime = 0.0; CurrentFrame = frame}                
+            else 
+                {hero with CurrentFrametime = cft}                       
+
+        match hero.Jumping, hero.Speed.X = float32 0 with
+        | true, _ -> {hero with CurrentFrame = jumpFrame}
+        | false, true -> {hero with CurrentFrame = idleFrame}
+        | false, false -> 
+            hero.CurrentFrametime + gametime.ElapsedGameTime.TotalMilliseconds
+            |> updateMoveFrame hero
+
     /// Runs a complete state-update on the hero.
-    let update (gametime:GameTime) collisions =
+    let update gametime collisions =
 
         /// Updates the hero's collision rectangle based on the current position.
         let updateCollisionRectangle hero = 
@@ -68,24 +84,23 @@ module Hero =
         /// Applies inertia to the hero's left/right movement.
         let applyInertia hero = 
             { hero with 
-                Speed = new Vector2(MathHelper.Lerp(hero.Speed.X, float32 0.0, inertia)) }
+                Speed = V2.create (MathHelper.Lerp(hero.Speed.X, float32 0, inertia)) hero.Speed.Y }
 
         /// ???
         let clampMove hero = 
             { hero with Speed = if hero.Speed.X > float32 -0.1 && hero.Speed.X < float32 0.1
-                                then new Vector2(float32 0, hero.Speed.Y)
+                                then V2.create (float32 0) hero.Speed.Y
                                 else hero.Speed }
     
         /// Always apply gravity to the hero (so that he falls).
-        let applyGravity hero =
-            { hero with Speed = new Vector2(hero.Speed.X, hero.Speed.Y + gravity) }            
+        let applyGravity hero = {hero with Speed = hero.Speed |> V2.addY gravity}
 
         /// Applies the hero's speed to their position to create movement.
         let applyMovement hero = 
-            { hero with Position = hero.Position + hero.Speed }            
+            { hero with Position = V2.add hero.Position hero.Speed }            
 
         /// Apply all the collision detection functions to the hero.
-        let applyCollisions = collisions |> Seq.reduce (>>)
+        let applyCollisions = collisions |> Seq.reduce (>>)        
 
         // Compose it all together and wait for a hero!
         updateCollisionRectangle
@@ -94,6 +109,7 @@ module Hero =
         >> applyGravity
         >> applyCollisions
         >> applyMovement
+        >> updateAnimation gametime
 
     /// Spawns a hero at a given position.
     let spawn position =         
@@ -103,7 +119,7 @@ module Hero =
           Speed = Vector2.Zero 
           CollisionRectangle = new Rectangle(int position.X, int position.Y, frameW-20, frameH-10)
           CurrentFrame = 0
-          CurrentFrametime = float32 0.0 }
+          CurrentFrametime = 0.0 }
 
     /// Draws a hero to a spritebatch.
     let draw (spritebatch:SpriteBatch) (texture:Texture2D) hero = 
@@ -116,6 +132,6 @@ module Hero =
             rotation=float32 0,
             origin=new Vector2(float32 (frameW / 2), float32 frameH),
             scale=float32 1,
-            effect=(match hero.Direction with | Left -> SpriteEffects.None | Right -> SpriteEffects.FlipHorizontally),
+            effect=(match hero.Direction with | Right -> SpriteEffects.None | Left -> SpriteEffects.FlipHorizontally),
             depth=float32 0)
         spritebatch.End()
