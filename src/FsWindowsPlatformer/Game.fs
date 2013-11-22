@@ -37,7 +37,9 @@ type FsWindowsPlatformerGame() as game =
     override game.Update(gametime) = 
         let heroCollisions = seq {
             yield Collisions.clampToGameMapBoundaries
-            yield Collisions.checkFloor (fst gamemap) }
+            yield Collisions.checkFloor (fst gamemap)
+            yield Collisions.checkWalls (fst gamemap)
+            yield Collisions.checkCeiling (fst gamemap) }
 
         let ks = Keyboard.GetState()
 
