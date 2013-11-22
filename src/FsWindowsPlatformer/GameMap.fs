@@ -6,16 +6,23 @@ open Microsoft.Xna.Framework
 open Microsoft.Xna.Framework.Content
 open Microsoft.Xna.Framework.Graphics
 
+/// Each tile of the game world will be represented as one of the following types.
 type Tile = 
     | HeroSpawn
     | EnemySpawn
     | Empty
     | Full
 
+/// Contains values and functions related to and for working with the game world.
 module GameMap =
 
+    /// Helper function to turn 2D arrays into a sequence for folds etc.
     let flatten (a: 'a[,]) = Seq.cast<'a> a
+    
+    /// Helper function to split a string by line breaks.
+    let split (s:string) = s.Split([|Environment.NewLine|], StringSplitOptions.RemoveEmptyEntries)  
 
+    /// Value of a completely empty map.
     let emptyMap = """
 00000000000000000000
 00000000000000000000
@@ -29,21 +36,27 @@ module GameMap =
 00000000000000000000
 00000000000000000000
 """
-
+    /// Width of the map measured in tiles.
     let mapW = 20
-    let mapH = 11
-    let tileW = 64
-    let tileH = 64
-    let gravity = 0.2    
-    
-    let split (s:string) = s.Split([|Environment.NewLine|], StringSplitOptions.RemoveEmptyEntries)  
 
+    /// Height of the map measured in tiles.
+    let mapH = 11
+
+    /// Width of a tile measured in pixels.
+    let tileW = 64
+
+    /// Height of a tile measured in pixels.
+    let tileH = 64  
+
+    /// Checks that a set of tile coords are within the accepted world size.
     let inRange (x,y) = x >= 0 && x < mapW && y >= 0 && y < mapH
 
+    /// Will return Some tile when one exists at a specified position.
     let tileAt (tiles:Tile[,]) (pos:Vector2) = 
         let x, y = int pos.X / tileW, int pos.Y / tileH
         if inRange(x, y) then Some(tiles.[x,y]) else None
 
+    /// Constructs a new tile from the string value recorded in the map.txt
     let tile x = 
         match x with
         | "1" -> Full
@@ -52,20 +65,25 @@ module GameMap =
         | "9" -> HeroSpawn
         | _ -> Empty   
 
+    /// Parses a string into a game map.
     let parse =    
         split
         >> (fun lines x y -> lines.[y].[x].ToString())
         >> Array2D.init mapW mapH 
         >> Array2D.map tile 
 
+    /// A completely empty map of tiles.
     let empty = emptyMap |> parse
 
+    /// Loads a new game map and associated texture from the content pipeline.
     let load (content:ContentManager) file =
         let maptext = File.ReadAllText(Path.Combine(content.RootDirectory, file))
         let texture = content.Load<Texture2D>("tilesheet")
         let map = parse maptext        
         map, texture
 
+    /// Gets a position of the hero spawn point in a map.
+    /// Will throw exception if no hero spawn marker is in map.
     let getHeroSpawnPosition =
         let coordsToPosition (x,y) = 
             ((new Vector2(float32 x, float32 y)) * (new Vector2(float32 tileW, float32 tileH)))
@@ -81,6 +99,7 @@ module GameMap =
         >> Seq.pick heroSpawn
         >> coordsToPosition        
 
+    /// Draws the map (background) to a spritebatch.
     let draw (spritebatch:SpriteBatch) (texture:Texture2D) tiles =
         let drawOne(position, source) =
             spritebatch.Draw(

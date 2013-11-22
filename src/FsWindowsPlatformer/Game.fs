@@ -5,6 +5,7 @@ open Microsoft.Xna.Framework
 open Microsoft.Xna.Framework.Graphics
 open Microsoft.Xna.Framework.Input
 
+/// Here lies the mutable states!
 type FsWindowsPlatformerGame() as game = 
     inherit Game()
 
@@ -34,11 +35,21 @@ type FsWindowsPlatformerGame() as game =
         heroTexture <- Hero.loadTexture game.Content
 
     override game.Update(gametime) = 
-        ()
+        let heroCollisions = seq {
+            yield Collisions.clampToGameMapBoundaries
+            yield Collisions.checkFloor (fst gamemap) }
+
+        let ks = Keyboard.GetState()
+
+        hero <-
+            if ks.IsKeyDown(Keys.A) then Hero.move Left hero
+            elif ks.IsKeyDown(Keys.D) then Hero.move Right hero
+            else hero        
+            |> (fun h -> if ks.IsKeyDown(Keys.Space) then Hero.jump h else h)
+        
+        hero <- Hero.update gametime heroCollisions hero
 
     override game.Draw(gametime) = 
         game.GraphicsDevice.Clear(Color.CornflowerBlue)
-
-        // tie-fighter!
         GameMap.draw spritebatch (snd gamemap) (fst gamemap) 
         Hero.draw spritebatch heroTexture hero

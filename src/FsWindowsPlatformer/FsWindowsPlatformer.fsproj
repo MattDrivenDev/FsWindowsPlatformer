@@ -52,6 +52,7 @@
     <None Include="App.config" />
     <Compile Include="Hero.fs" />
     <Compile Include="GameMap.fs" />
+    <Compile Include="Collisions.fs" />
     <Compile Include="Game.fs" />
     <Compile Include="Program.fs" />
   </ItemGroup>
